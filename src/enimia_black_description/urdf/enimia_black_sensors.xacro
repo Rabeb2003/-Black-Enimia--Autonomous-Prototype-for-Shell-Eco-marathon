@@ -1,0 +1,79 @@
+<?xml version="1.0"?>
+<!--
+  ENIMIA - Black Edition avec capteurs intelligents (CALIBRAGE OPTIMAL SILESIA RING)
+  Version avec Livox Mid-360, BNO055 IMU, OAK-D Lite
+  
+  CALIBRAGE OPTIMAL pour:
+  - Mapping parfait du circuit Silesia Ring (SLAM 3D avec FAST-LIO2)
+  - Détection des lignes blanches de la route
+  - Détection des stop signs (panneaux d'arrêt)
+  
+  Positions optimisées:
+  - Livox Mid-360: sur le toit, centré, champ de vision 360° dégagé (xyz: 0.30 0 0.35, rpy: 0 0 0)
+  - BNO055: au centre de masse exact pour odometrie inertielle précise (xyz: 0.10 0 0.08, rpy: 0 0 0)
+  - OAK-D Lite: à l'avant, incliné pour voir lignes à 2-4m et stop signs (xyz: 0.55 0 0.22, rpy: 0 -0.15 0)
+-->
+<robot name="enimia_black_sensors" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- ===================== Inclusion du véhicule de base ===================== -->
+  <xacro:include filename="$(find enimia_black_description)/urdf/enimia_black.urdf"/>
+
+  <!-- ===================== Inclusion des capteurs ===================== -->
+  <xacro:include filename="$(find enimia_black_description)/urdf/sensors/livox_mid360.xacro"/>
+  <xacro:include filename="$(find enimia_black_description)/urdf/sensors/bno055.xacro"/>
+  <xacro:include filename="$(find enimia_black_description)/urdf/sensors/oak_d_lite.xacro"/>
+
+  <!-- ===================== Livox Mid-360 ===================== -->
+  <!-- Position ajustée:
+       - xyz: 0.30m devant le centre, centré latéralement, 0.75m au-dessus du sol (plus proche du toit)
+       - rpy: rotation pour orienter capteurs vers l'avant
+  -->
+  <xacro:livox_mid360 
+    parent="base_link"
+    name="livox"
+    xyz="0.30 0 0.48"
+    rpy="0 0 0"/>
+
+  <!-- ===================== BNO055 IMU ===================== -->
+  <!-- Position optimisée pour odometrie inertielle précise:
+       - xyz: 0.10m devant le centre (proche du centre de masse), centré latéralement, 0.08m au-dessus du plancher
+       - Cette position minimise les couples lors des accélérations/freinages
+       - Essentiel pour FAST-LIO2 (LiDAR-Inertial Odometry)
+       - rpy: axes alignés avec REP-103 (X avant, Y gauche, Z haut)
+  -->
+  <xacro:bno055 
+    parent="base_link"
+    name="imu"
+    xyz="0.10 0 0.08"
+    rpy="0 0 0"/>
+
+  <!-- ===================== OAK-D Lite ===================== -->
+  <!-- Position sur l'assemblage LiDAR :
+       - parent: livox_assemblage_link
+       - xyz: 0 0 0.05 (5cm au-dessus de l'assemblage)
+       - rpy: 0 -0.087 0 (pitch -5° pour regarder vers le bas)
+  -->
+  <xacro:oak_d_lite 
+    parent="base_link"
+    name="oak"
+    xyz="0.55 0 0.5"
+    rpy="0 -0.15 0"/>
+
+  <!-- ===================== Gazebo Ground Truth P3D Plugin ===================== -->
+  <gazebo>
+    <plugin name="ground_truth_p3d" filename="libgazebo_ros_p3d.so">
+      <ros>
+        <remapping>~/out:=/gazebo/ground_truth/odom</remapping>
+      </ros>
+      <!-- Gazebo merges the fixed base_link/body_link chain into its root
+           link.  The resulting SDF therefore exposes base_footprint (not
+           base_link) to this plugin. -->
+      <body_name>base_footprint</body_name>
+      <!-- No frame_name: Gazebo's world frame is the reference. -->
+      <update_rate>50.0</update_rate>
+      <xyz_offset>0 0 0</xyz_offset>
+      <rpy_offset>0 0 0</rpy_offset>
+    </plugin>
+  </gazebo>
+
+</robot>

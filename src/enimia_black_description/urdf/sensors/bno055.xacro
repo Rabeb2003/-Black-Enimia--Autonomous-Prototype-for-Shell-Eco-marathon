@@ -1,0 +1,132 @@
+<?xml version="1.0"?>
+<robot name="bno055_sensor" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- ===================== BNO055 IMU ===================== -->
+  <!-- IMU 9-DOF avec gyroscope, accéléromètre, magnétomètre -->
+  <xacro:macro name="bno055" params="parent:='base_link' name:='imu' xyz:='0 0 0' rpy:='0 0 0'">
+    
+    <!-- Link du capteur -->
+    <link name="${name}_link">
+      <visual>
+        <origin xyz="0 0 0" rpy="-1.5708 0 0"/>
+        <geometry>
+          <!-- Mesh STL réel du BNO055 -->
+          <!-- Rotation -90° autour de X pour Z vers le bas -->
+          <mesh filename="package://enimia_black_description/meshes/sensors/BNO055.stl" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="imu_pcb">
+          <color rgba="0.1 0.3 0.2 1.0"/>
+        </material>
+      </visual>
+      
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.0305 0.0254 0.010"/>
+        </geometry>
+      </collision>
+      
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="0.015"/>  <!-- ~15g -->
+        <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
+      </inertial>
+    </link>
+
+    <!-- Joint fixe avec le parent -->
+    <joint name="${name}_joint" type="fixed">
+      <parent link="${parent}"/>
+      <child link="${name}_link"/>
+      <origin xyz="${xyz}" rpy="${rpy}"/>
+    </joint>
+
+    <!-- ===================== Gazebo Plugin IMU ===================== -->
+    <gazebo reference="${name}_link">
+      <material>Gazebo/Green</material>
+      
+      <!-- Plugin IMU standard de Gazebo -->
+      <sensor name="${name}_sensor" type="imu">
+        <pose>0 0 0 0 0 0</pose>
+        <always_on>true</always_on>
+        <update_rate>100</update_rate>  <!-- 100 Hz -->
+        <visualize>true</visualize>
+        
+        <imu>
+          <angular_velocity>
+            <x>
+              <noise type="gaussian">
+                <mean>0.0</mean>
+                <stddev>2e-4</stddev>  <!-- 0.02 deg/s -->
+              </noise>
+            </x>
+            <y>
+              <noise type="gaussian">
+                <mean>0.0</mean>
+                <stddev>2e-4</stddev>
+              </noise>
+            </y>
+            <z>
+              <noise type="gaussian">
+                <mean>0.0</mean>
+                <stddev>2e-4</stddev>
+              </noise>
+            </z>
+          </angular_velocity>
+          
+          <linear_acceleration>
+            <x>
+              <noise type="gaussian">
+                <mean>0.0</mean>
+                <stddev>1.7e-2</stddev>  <!-- 0.017 m/s² -->
+              </noise>
+            </x>
+            <y>
+              <noise type="gaussian">
+                <mean>0.0</mean>
+                <stddev>1.7e-2</stddev>
+              </noise>
+            </y>
+            <z>
+              <noise type="gaussian">
+                <mean>0.0</mean>
+                <stddev>1.7e-2</stddev>
+              </noise>
+            </z>
+          </linear_acceleration>
+          
+          <orientation>
+            <x>
+              <noise type="gaussian">
+                <mean>0.0</mean>
+                <stddev>0.0</stddev>
+              </noise>
+            </x>
+            <y>
+              <noise type="gaussian">
+                <mean>0.0</mean>
+                <stddev>0.0</stddev>
+              </noise>
+            </y>
+            <z>
+              <noise type="gaussian">
+                <mean>0.0</mean>
+                <stddev>0.0</stddev>
+              </noise>
+            </z>
+          </orientation>
+        </imu>
+        
+        <plugin name="${name}_controller" filename="libgazebo_ros_imu_sensor.so">
+          <ros>
+            <namespace></namespace>
+            <remapping>~/out:=${name}/data</remapping>
+          </ros>
+          <frame_name>${name}_link</frame_name>
+          <initial_orientation_as_reference>false</initial_orientation_as_reference>
+        </plugin>
+      </sensor>
+    </gazebo>
+
+  </xacro:macro>
+
+</robot>

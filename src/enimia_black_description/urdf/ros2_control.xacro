@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- ===================== ros2_control for Gazebo Classic with Ackermann ===================== -->
+  <xacro:macro name="ros2_control" params="name:='enimia_black'">
+
+    <ros2_control name="GazeboSystem" type="system">
+      <hardware>
+        <!-- Plugin pour Gazebo Classic -->
+        <plugin>gazebo_ros2_control/GazeboSystem</plugin>
+      </hardware>
+
+      <!-- Joints de direction (position) - Roues avant -->
+      <joint name="front_left_steer_joint">
+        <command_interface name="position"/>
+        <state_interface name="position"/>
+        <state_interface name="velocity"/>
+      </joint>
+      <joint name="front_right_steer_joint">
+        <command_interface name="position"/>
+        <state_interface name="position"/>
+        <state_interface name="velocity"/>
+      </joint>
+
+      <!-- Roues avant passives : pas de commande, mais leur position doit
+           etre publiee dans /joint_states pour que robot_state_publisher
+           produise les TF des roues. -->
+      <joint name="front_left_wheel_joint">
+        <state_interface name="position"/>
+        <state_interface name="velocity"/>
+      </joint>
+      <joint name="front_right_wheel_joint">
+        <state_interface name="position"/>
+        <state_interface name="velocity"/>
+      </joint>
+
+      <!-- Joint de traction (vitesse) - Roue arrière motrice UNIQUE -->
+      <joint name="rear_wheel_joint">
+        <command_interface name="velocity"/>
+        <state_interface name="position"/>
+        <state_interface name="velocity"/>
+      </joint>
+    </ros2_control>
+
+    <!-- Gazebo plugin pour Gazebo Classic ros2_control -->
+    <gazebo>
+      <plugin filename="libgazebo_ros2_control.so" name="gazebo_ros2_control">
+        <parameters>$(find enimia_black_description)/config/controllers.yaml</parameters>
+      </plugin>
+    </gazebo>
+
+  </xacro:macro>
+
+</robot>
