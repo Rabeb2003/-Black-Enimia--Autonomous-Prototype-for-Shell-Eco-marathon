@@ -1,0 +1,26 @@
+# OAK-D Lite (depthai_ros_driver Camera node name: oak)
+/oak:
+  ros__parameters:
+    camera:
+      i_nn_type: none
+      i_pipeline_type: RGBD
+      i_enable_imu: true
+      i_enable_ir: false
+      i_usb_speed: SUPER_PLUS
+    rgb:
+      i_publish_topic: true
+      i_width: 640
+      i_height: 360
+      i_fps: 30.0
+    stereo:
+      i_publish_topic: true
+      i_subpixel: true
+      i_width: 640
+      i_height: 400
+      i_fps: 30.0
+      i_align_socket: RGB
+    imu:
+      i_message_type: IMU
+      i_sync_method: LINEAR_INTERPOLATE_ACCEL
+      i_acc_freq: 100
+      i_gyro_freq: 100

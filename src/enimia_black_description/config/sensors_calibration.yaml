@@ -1,0 +1,130 @@
+# ============================================================================
+# Calibration des capteurs - Black ENIMIA (CALIBRAGE OPTIMAL SILESIA RING)
+# ============================================================================
+# Ce fichier contient les positions et orientations OPTIMISÉES des capteurs pour:
+# - Mapping parfait du circuit Silesia Ring (SLAM 3D avec FAST-LIO2)
+# - Détection des lignes blanches de la route
+# - Détection des stop signs (panneaux d'arrêt)
+#
+# Ces positions sont optimisées pour la compétition Shell Eco-marathon Poland 2027.
+# Elles doivent être vérifiées et ajustées sur le véhicule réel si nécessaire.
+#
+# ============================================================================
+# Convention REP-103:
+# X = avant du véhicule
+# Y = gauche du véhicule
+# Z = haut du véhicule
+# rpy = roll (rotation autour de X), pitch (rotation autour de Y), yaw (rotation autour de Z)
+# ============================================================================
+
+# ============================================================================
+# Livox Mid-360 LiDAR
+# ============================================================================
+# Position optimisée pour mapping Silesia Ring avec mât rotatif 90°:
+# - Sur le toit avec support trépoid + mât rotatif, centré latéralement
+# - LiDAR en haut sur la platine (empilement inversé: caméra en bas, LiDAR en haut)
+# - Mât avec rotation 90° (rpy="0 0 1.5708")
+# - Orientation alignée avec REP-103 (rpy="0 0 0") comme les roues avant
+# - Maximise la détection des bordures, obstacles et virages du circuit
+# - Essentiel pour FAST-LIO2 (LiDAR-Inertial Odometry)
+livox_mid360:
+  parent_link: base_link
+  xyz:
+    x: 0.30      # 30 cm devant le centre de l'empattement
+    y: 0.0       # Centré latéralement
+    z: 0.45      # 45 cm au-dessus du sol (support trépoid)
+  rpy:
+    roll: 0.0    # Pas de rotation autour de X
+    pitch: 0.0   # Horizontal
+    yaw: 0.0     # Orienté vers l'avant (aligné avec roues avant)
+  
+  # Notes de calibration:
+  # - Empilement inversé: caméra OAK en bas (sur mount_link), LiDAR en haut (sur top_plate via mât)
+  # - Mât avec rotation 90° autour de Z (rpy="0 0 1.5708")
+  # - Orientation LiDAR alignée avec REP-103 (rpy="0 0 0") comme les roues avant
+  # - Support trépoid snap-mount livox-mid-360-tripod-snap-mount.stl intégré
+  # - Position absolue LiDAR: Z ≈ 0.58m (0.45 + 0.02 + 0.10 + 0.01)
+  # - Pour la calibration extrinsèque avec la caméra, utiliser lidar_camera_calibration
+  
+# ============================================================================
+# BNO055 IMU
+# ============================================================================
+# Position optimisée pour odometrie inertielle précise:
+# - Au centre de masse exact pour minimiser les couples
+# - Essentiel pour FAST-LIO2 (fusion LiDAR-Inertial)
+# - Alignement parfait avec REP-103
+bno055:
+  parent_link: base_link
+  xyz:
+    x: 0.10      # 10 cm devant le centre (proche du centre de masse réel)
+    y: 0.0       # Centré latéralement
+    z: 0.08      # 8 cm au-dessus du plancher (position stable)
+  rpy:
+    roll: 0.0    # Pas de rotation autour de X
+    pitch: 0.0   # Pas d'inclinaison
+    yaw: 0.0     # Orienté vers l'avant
+  
+  # Notes de calibration:
+  # - L'IMU doit être monté rigidement (pas de jeu, pas de vibrations)
+  # - Vérifier l'alignement des axes avec imu_tools ou le driver BNO055
+  # - Faire une calibration magnétique (magnetometer calibration) avant utilisation
+  # - X = avant, Y = gauche, Z = haut (convention REP-103)
+  # - Cette position minimise les erreurs d'odometrie lors des accélérations/freinages
+  
+# ============================================================================
+# OAK-D Lite Depth Camera
+# ============================================================================
+# Position sur le support (en bas du mât):
+# - parent: livox_mount_link (support trépoid, en bas)
+# - xyz relatif: 0 0 0.02 (2cm au-dessus du support)
+# - Position absolue approx: Z ≈ 0.47m (0.45 + 0.02)
+# - rpy: 0 0 0 (aligné avec REP-103, comme les roues avant)
+# - Le LiDAR est en haut sur la platine via le mât rotatif 90°
+# - Champ de vision 60° couvre la largeur de la piste Silesia Ring
+oak_d_lite:
+  parent_link: livox_mount_link
+  xyz:
+    x: 0.0       # Centré sur le support (relatif)
+    y: 0.0       # Centré latéralement (relatif)
+    z: 0.02      # 2 cm au-dessus du support (relatif)
+  rpy:
+    roll: 0.0    # Pas de rotation autour de X
+    pitch: 0.0   # Horizontal (aligné avec REP-103)
+    yaw: 0.0     # Orienté vers l'avant (comme les roues avant)
+  
+  # Notes de calibration:
+  # - Empilement inversé: caméra OAK en bas (sur mount_link), LiDAR en haut (sur top_plate via mât)
+  # - Orientation alignée avec REP-103 (rpy="0 0 0") comme les roues avant
+  # - Position absolue caméra: Z ≈ 0.47m (0.45 + 0.02)
+  # - Baseline stéréo: 24 mm (distance entre les deux caméras)
+  # - Pour la calibration intrinsèque, utiliser la calibration OpenCV
+  # - Pour la calibration extrinsèque avec le LiDAR, utiliser lidar_camera_calibration
+  # - Le champ de vision 60° couvre la largeur de la piste Silesia Ring (~3-4m à distance optimale)
+  
+# ============================================================================
+# Instructions de calibration
+# ============================================================================
+# 
+# 1. Calibration mécanique (sur le véhicule réel):
+#    - Monter les capteurs physiquement sur le véhicule
+#    - Mesurer les positions xyz avec un pied à coulisse
+#    - Mesurer les angles rpy avec un niveau à bulle / inclinomètre
+#    - Mettre à jour ce fichier avec les valeurs mesurées
+#
+# 2. Calibration extrinsèque LiDAR-Caméra:
+#    - Utiliser le package lidar_camera_calibration (ROS 2)
+#    - Placer une cible de calibration (chessboard + plan)
+#    - Enregistrer les données LiDAR et caméra
+#    - Calculer la transformation entre livox_optical_frame et oak_rgb_optical_frame
+#
+# 3. Calibration IMU:
+#    - Utiliser le driver BNO055 pour calibrer l'accéléromètre et le gyroscope
+#    - Faire une calibration magnétique (magnetometer calibration)
+#    - Vérifier l'alignement des axes avec imu_tools/rviz_imu_plugin
+#
+# 4. Vérification dans RViz2:
+#    - Lancer: ros2 launch enimia_black_description display_sensors.launch.py
+#    - Vérifier que les frames TF sont correctement positionnés
+#    - Vérifier que les axes sont alignés avec REP-103
+#
+# ============================================================================

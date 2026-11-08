@@ -1,0 +1,15 @@
+pointcloud_to_laserscan:
+  ros__parameters:
+    # Horizontal slice of Mid-360 for Nav2 (/livox/scan).
+    target_frame: livox_link
+    transform_tolerance: 0.05
+    min_height: -0.4
+    max_height: 0.4
+    angle_min: -3.14159
+    angle_max: 3.14159
+    angle_increment: 0.00872665
+    scan_time: 0.1
+    range_min: 0.2
+    range_max: 40.0
+    use_inf: true
+    inf_epsilon: 1.0

@@ -1,55 +1,16 @@
-# ROS2 build artifacts
-build/
-install/
-log/
-logs/
+# Ignore everything except specific directories
+*
+
+# But keep these directories
+!src/
+!src/enimia_black_description/
+!src/enimia_black_description/**
+!src/enimia_rl/
+!src/enimia_rl/enimia_rl/
+!src/enimia_rl/enimia_rl/**
+!README.md
+!.gitignore
 
 # Python cache
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-
-# IDEs
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# ROS logs
-.ros_log/
-
-# Large files
-*.mp4
-*.pdf
-*.pgm
-*.yaml
-*.kml
-*.gv
-
-# Third party dependencies
-third_party/
-ROS2_line_follower-main/
-Ultra-Fast-Lane-Detection-master/
-f1_racer-main/
-line_follower_ws-main/
-onnx-Ultra-Fast-Lane-Detection-Inference-main/
-
-# Documents
-Documents prototype Black enimia 2022-61002T164420Z-1-001/
-
-# Videos and large media files
-*.webm
-*.mp4
-*.mov
-*.avi
-
-# Temporary files
-*.bak
-*.tmp
-.DS_Store
-
-# Embedded git repositories
-trace_car/
+*.pyc
