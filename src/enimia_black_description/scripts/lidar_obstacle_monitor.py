@@ -75,20 +75,35 @@ class LidarObstacleMonitor(Node):
         if not np.any(valid_mask):
             return
 
-        # Compute angle for each ray
+        # Compute Cartesian coordinates (x_front, y_left) in robot frame
         angles = msg.angle_min + np.arange(len(ranges)) * msg.angle_increment
+        x_pts = ranges * np.cos(angles)
+        y_pts = ranges * np.sin(angles)
 
-        # 1. Front Corridor (Collision Sector)
-        front_mask = valid_mask & (np.abs(angles) <= self.front_angle_rad)
-        min_front = float(np.min(ranges[front_mask])) if np.any(front_mask) else math.inf
+        # 1. Front Vehicle Collision Corridor
+        # Black Enimia width is 0.57m. Corridor width is +-0.55m to prevent false alarms on lateral barriers.
+        front_collision_mask = (
+            valid_mask &
+            (x_pts > 0.35) & (x_pts <= self.danger_distance) &
+            (np.abs(y_pts) <= 0.55)
+        )
+        emergency_brake = bool(np.any(front_collision_mask))
 
-        # 2. Right Barrier Sector (Negative angles in standard ROS frame)
-        right_mask = valid_mask & (angles < -self.front_angle_rad) & (angles >= -self.side_max_rad)
-        min_right = float(np.min(ranges[right_mask])) if np.any(right_mask) else math.inf
+        # Forward warning distance along collision corridor
+        front_warning_mask = (
+            valid_mask &
+            (x_pts > 0.35) & (x_pts <= self.warning_distance) &
+            (np.abs(y_pts) <= 0.65)
+        )
+        min_front = float(np.min(x_pts[front_warning_mask])) if np.any(front_warning_mask) else math.inf
 
-        # 3. Left Barrier Sector (Positive angles)
-        left_mask = valid_mask & (angles > self.front_angle_rad) & (angles <= self.side_max_rad)
-        min_left = float(np.min(ranges[left_mask])) if np.any(left_mask) else math.inf
+        # 2. Right Barrier Sector (y < -0.55m)
+        right_mask = valid_mask & (y_pts < -0.55) & (x_pts > -0.5) & (x_pts < 4.0)
+        min_right = float(np.min(-y_pts[right_mask])) if np.any(right_mask) else math.inf
+
+        # 3. Left Barrier Sector (y > +0.55m)
+        left_mask = valid_mask & (y_pts > 0.55) & (x_pts > -0.5) & (x_pts < 4.0)
+        min_left = float(np.min(y_pts[left_mask])) if np.any(left_mask) else math.inf
 
         nearest_overall = min(min_front, min_right, min_left)
 
