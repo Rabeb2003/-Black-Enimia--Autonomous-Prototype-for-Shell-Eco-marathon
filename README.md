@@ -29,21 +29,191 @@ The Shell Eco-marathon is a global competition that challenges student teams to 
 
 ## Software Architecture
 
-### ROS2 Packages
+### Perception System
 
-1. **enimia_black_description**: URDF models and Gazebo simulation files
-2. **enimia_rl**: Reinforcement learning environment and training scripts
-3. **oak_d_camera**: OAK-D camera driver and image processing
-4. **waypoints_calculations**: Path planning and trajectory generation
-5. **lane_assist_ros**: Lane detection and tracking system
-6. **lane_follower**: Lane following control algorithms
+The perception system is responsible for understanding the vehicle's environment through sensor data processing and computer vision.
 
-### Navigation Stack
+![Gazebo Simulation](captures/gazebo_world.png)
 
-- **SLAM**: Simultaneous Localization and Mapping for environment mapping
-- **AMCL**: Adaptive Monte Carlo Localization for precise positioning
-- **Nav2**: ROS2 Navigation Stack for global and local path planning
-- **Costmap**: Dynamic obstacle avoidance and path optimization
+#### Lane Detection
+- **Ultra-Fast Lane Detection**: Deep learning model for real-time lane detection
+- **CNN-based approach**: Uses convolutional neural networks for robust lane detection
+- **Multi-lane tracking**: Simultaneous detection of multiple lane markings
+- **Camera-based**: Utilizes OAK-D camera for visual input
+
+![RViz Visualization](captures/rviz_visualization.png)
+
+#### Object Detection
+- **Obstacle detection**: Identifies static and dynamic obstacles
+- **Distance estimation**: Calculates distance to detected objects
+- **Classification**: Categorizes objects (vehicles, pedestrians, barriers)
+
+### Navigation System
+
+The navigation system enables autonomous path planning and execution using ROS2 Navigation Stack.
+
+![RViz2](captures/rviz2.png)
+
+#### SLAM (Simultaneous Localization and Mapping)
+- **Mapping**: Creates 2D occupancy grid maps of the environment
+- **Localization**: Estimates vehicle pose within the map
+- **Loop closure**: Detects when vehicle returns to previously visited locations
+- **Graph optimization**: Improves map accuracy over time
+
+#### AMCL (Adaptive Monte Carlo Localization)
+- **Particle filter**: Uses probabilistic approach for localization
+- **Pose estimation**: Provides accurate position and orientation
+- **Global localization**: Can recover from kidnapping scenarios
+- **Map matching**: Correlates sensor data with map features
+
+#### Nav2 Navigation Stack
+- **Global planner**: Computes optimal path from start to goal
+- **Local planner**: Generates velocity commands for short-term navigation
+- **Behavior tree**: Manages navigation behaviors and recovery strategies
+- **Costmap layers**: Handles static and dynamic obstacles
+
+![Simulation](captures/simulation.png)
+
+### Path Planning
+
+The path planning module generates smooth and efficient trajectories for the vehicle.
+
+#### Waypoints Generation
+- **Cubic Spline Interpolation**: Creates smooth curves between waypoints
+- **Trajectory optimization**: Minimizes curvature and acceleration
+- **Velocity planning**: Generates velocity profiles along the path
+- **Collision checking**: Ensures planned path is obstacle-free
+
+#### Trajectory Following
+- **Pure pursuit**: Geometric path following algorithm
+- **PID control**: Maintains desired trajectory
+- **Lateral control**: Steering angle computation
+- **Longitudinal control**: Speed regulation
+
+### Sensors Integration
+
+The system integrates multiple sensors for robust perception and localization.
+
+#### OAK-D Camera
+- **Stereo vision**: Provides depth information
+- **AI acceleration**: On-device neural network inference
+- **High resolution**: 4K image capture
+- **Low latency**: Real-time processing
+
+#### Lidar
+- **2D/3D scanning**: Provides point cloud data
+- **Range measurement**: Accurate distance measurements
+- **Obstacle detection**: Identifies objects in the environment
+- **Mapping support**: Contributes to SLAM
+
+#### IMU (Inertial Measurement Unit)
+- **Orientation**: Provides roll, pitch, yaw angles
+- **Angular velocity**: Measures rotational speed
+- **Linear acceleration**: Detects acceleration changes
+- **Sensor fusion**: Combined with odometry for state estimation
+
+### Code Structure
+
+#### ROS2 Packages
+
+1. **enimia_black_description**
+   - URDF models of the vehicle
+   - Gazebo world and plugin configurations
+   - Launch files for simulation and navigation
+   - Robot state publisher configuration
+
+2. **enimia_rl**
+   - Reinforcement learning environment (Gym-compatible)
+   - Data collection scripts
+   - Training pipelines for RL models
+   - Vision-based RL implementation
+   - Offline training capabilities
+
+3. **oak_d_camera**
+   - OAK-D camera driver
+   - Image processing pipelines
+   - Depth estimation
+   - Camera calibration
+   - URDF models for camera mounting
+
+4. **waypoints_calculations**
+   - Cubic spline implementation
+   - Waypoint generation algorithms
+   - Trajectory smoothing
+   - Path optimization
+
+5. **waypoints_niagara_creator**
+   - Interactive waypoint creation
+   - Waypoint visualization
+   - Export/import functionality
+
+6. **waypoints_niagara_loader**
+   - Waypoint loading from files
+   - Path reconstruction
+   - Trajectory publishing
+
+7. **lane_assist_ros**
+   - Lane detection node
+   - Lane tracking algorithm
+   - Visual feedback
+   - Control signal generation
+
+8. **lane_follower**
+   - Lane following control
+   - Steering angle computation
+   - Speed control
+   - Safety monitoring
+
+### Launch Files
+
+#### Simulation Launches
+
+```bash
+# Gazebo with autonomous navigation
+ros2 launch enimia_black_description gazebo_nav2_autonomous.launch.py
+```
+- Launches Gazebo simulation
+- Spawns the vehicle model
+- Starts Nav2 navigation stack
+- Loads map and configures planners
+
+```bash
+# SLAM for mapping
+ros2 launch enimia_black_description slam.launch.py
+```
+- Launches Gazebo with SLAM
+- Starts slam_toolbox for mapping
+- Enables real-time map building
+- Saves map on command
+
+#### Real Vehicle Launches
+
+```bash
+# Camera driver
+ros2 launch oak_d_camera camera.launch.py
+```
+- Initializes OAK-D camera
+- Publishes camera images
+- Provides depth information
+- Configures image processing
+
+```bash
+# Lane detection
+ros2 launch lane_assist_ros lane_detection.launch.py
+```
+- Starts lane detection node
+- Processes camera images
+- Publishes lane information
+- Visualizes detected lanes
+
+```bash
+# Autonomous navigation
+ros2 launch enimia_black_description autonomous_navigation.launch.py
+```
+- Launches full navigation stack
+- Integrates perception modules
+- Executes path planning
+- Controls vehicle actuators
 
 ## Installation
 
