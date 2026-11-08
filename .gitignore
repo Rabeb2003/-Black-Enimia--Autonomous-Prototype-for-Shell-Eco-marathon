@@ -14,3 +14,14 @@
 # Python cache
 __pycache__/
 *.pyc
+
+# Large model files
+src/enimia_black_description/models/
+*.pt
+*.torchscript
+*.onnx
+
+# Large mesh files
+src/enimia_black_description/meshes/
+*.stl
+*.dae
