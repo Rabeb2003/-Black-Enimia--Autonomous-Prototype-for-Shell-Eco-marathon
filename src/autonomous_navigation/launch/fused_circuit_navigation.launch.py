@@ -11,6 +11,7 @@ Launches:
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
+from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
@@ -32,11 +33,11 @@ def generate_launch_description():
         # Launch Arguments
         DeclareLaunchArgument('image_topic', default_value='/oak/rgb/image_raw',
                               description='Camera RGB image topic'),
-        DeclareLaunchArgument('output_cmd_topic', default_value='/cmd_vel_lane',
+        DeclareLaunchArgument('output_cmd_topic', default_value='/cmd_vel',
                               description='Target velocity command topic'),
-        DeclareLaunchArgument('cruise_speed', default_value='7.5',
+        DeclareLaunchArgument('cruise_speed', default_value='5.8',
                               description='Straight line cruising speed (m/s)'),
-        DeclareLaunchArgument('min_curve_speed', default_value='3.0',
+        DeclareLaunchArgument('min_curve_speed', default_value='2.8',
                               description='Hairpin curve speed (m/s)'),
         DeclareLaunchArgument('min_lap_distance', default_value='150.0',
                               description='Min track distance before finish stop (m)'),
@@ -48,8 +49,8 @@ def generate_launch_description():
                               description='Perception framerate limit'),
         DeclareLaunchArgument('use_sim_time', default_value='true',
                               description='Use simulation clock'),
-        DeclareLaunchArgument('enable_rl', default_value='true',
-                              description='Enable RL autopilot steering correction'),
+        DeclareLaunchArgument('enable_rl', default_value='false',
+                              description='Enable RL autopilot steering correction (disabled by default for rock-solid stability)'),
         DeclareLaunchArgument('rl_model_path',
                               default_value='/home/rabeb/Downloads/enimia_black/src/enimia_rl/models/vision_lane_keeping_ppo.zip',
                               description='Path to trained RL model (.zip)'),
@@ -150,16 +151,17 @@ def generate_launch_description():
             }]
         ),
 
-        # 5. RL Autopilot Wrapper (PPO vision/offline model)
+        # 5. RL Autopilot Wrapper (PPO vision/offline model) - active ONLY when enable_rl:=true
         Node(
             package='enimia_rl',
             executable='rl_fused_circuit_wrapper',
             name='rl_fused_circuit_wrapper',
             output='screen',
+            condition=IfCondition(enable_rl),
             parameters=[{
                 'model_path': rl_model_path,
                 'image_topic': image_topic,
-                'rl_action_scale': 0.60,
+                'rl_action_scale': 0.15,
                 'control_frequency': 25.0,
                 'use_sim_time': use_sim_time,
             }]

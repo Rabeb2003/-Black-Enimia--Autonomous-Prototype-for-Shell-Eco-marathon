@@ -213,21 +213,27 @@ class FusedLaneDetector(Node):
                 white_clusters = np.split(white_indices, split_points)
 
                 for cluster in white_clusters:
-                    if len(cluster) >= 2:
+                    cluster_len = len(cluster)
+                    # Filter real paint stripes: width between 2 and 55 pixels
+                    if 2 <= cluster_len <= 55:
                         cx = float(np.mean(cluster))
                         hw = expected_half_width(y)
-                        
-                        # Silesia Ring: dashed centerline is near track center (+- 0.30 * hw or +- 200px)
-                        dist_from_tracked = abs(cx - tracked_center)
-                        if dist_from_tracked < max(180.0, hw * 0.30):
+
+                        # Silesia Ring: Edge lines are directly adjacent to outer grass/kerb
+                        is_left_edge = (left_border > 15 and abs(cx - left_border) < 35)
+                        is_right_edge = (right_border < (w - 15) and abs(cx - right_border) < 35)
+
+                        if is_left_edge:
+                            if left_white is None or abs(cx - left_border) < abs(left_white - left_border):
+                                left_white = cx
+                        elif is_right_edge:
+                            if right_white is None or abs(cx - right_border) < abs(right_white - right_border):
+                                right_white = cx
+                        else:
+                            # Any stripe on open asphalt is the track centerline (even in sharp curves!)
+                            dist_from_tracked = abs(cx - tracked_center)
                             if center_white is None or dist_from_tracked < abs(center_white - tracked_center):
                                 center_white = cx
-                        elif cx < (tracked_center - max(200.0, hw * 0.45)):
-                            if left_white is None or dist_from_tracked < abs(left_white - tracked_center):
-                                left_white = cx
-                        elif cx > (tracked_center + max(200.0, hw * 0.45)):
-                            if right_white is None or dist_from_tracked < abs(right_white - tracked_center):
-                                right_white = cx
 
             eff_left = left_white if left_white is not None else (left_border if left_border > 12 else None)
             eff_right = right_white if right_white is not None else (right_border if right_border < (w - 12) else None)

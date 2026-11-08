@@ -76,6 +76,7 @@ class LidarObstacleMonitor(Node):
             return
 
         # Compute Cartesian coordinates (x_front, y_left) in robot frame
+        angles = msg.angle_min + np.arange(len(ranges)) * msg.angle_increment
         x_pts = ranges * np.cos(angles)
         y_pts = ranges * np.sin(angles)
 

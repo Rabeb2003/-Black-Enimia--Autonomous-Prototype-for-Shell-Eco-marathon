@@ -303,9 +303,14 @@ def main():
         processed += 1
 
         if args.display:
-            cv2.imshow("ENIMIA RL Lane Keeping Test", hud)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+            try:
+                cv2.imshow("ENIMIA RL Lane Keeping Test", hud)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
+            except cv2.error:
+                if processed == 1:
+                    print("[INFO] OpenCV HighGUI GUI display not supported in this environment. Saving annotated frames directly to output video.")
+                args.display = False
 
         if processed % 200 == 0:
             print(f"  Frame {frame_idx}/{total_frames} | FPS: {fps:.1f} | "
@@ -323,3 +328,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

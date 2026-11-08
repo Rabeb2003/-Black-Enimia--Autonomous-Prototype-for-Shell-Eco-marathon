@@ -23,6 +23,7 @@ setup(
         'console_scripts': [
             'train_rl = enimia_rl.train:main',
             'rl_lane_assist = enimia_rl.rl_wrapper:main',
+            'rl_fused_circuit_wrapper = enimia_rl.rl_wrapper:main',
         ],
     },
 )
