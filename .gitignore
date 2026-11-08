@@ -14,6 +14,7 @@
 # Python cache
 __pycache__/
 *.pyc
+*.pyo
 
 # Large model files
 src/enimia_black_description/models/
@@ -25,3 +26,14 @@ src/enimia_black_description/models/
 src/enimia_black_description/meshes/
 *.stl
 *.dae
+
+# Images
+*.png
+*.jpg
+*.jpeg
+*.gif
+
+# World files
+src/enimia_black_description/world/
+*.sdf
+*.world
