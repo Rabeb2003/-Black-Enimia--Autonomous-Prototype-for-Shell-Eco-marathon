@@ -1,0 +1,39 @@
+# RL Configuration for Black Enimia Hybrid Lane Keeping
+
+# Environment settings
+env:
+  max_episode_steps: 1000
+  observation_image_size: [64, 64]  # Downsampled for faster training
+  control_frequency: 20  # Hz
+  
+# RL agent settings
+rl:
+  algorithm: PPO
+  learning_rate: 0.0003
+  n_steps: 2048
+  batch_size: 64
+  n_epochs: 10
+  gamma: 0.99
+  gae_lambda: 0.95
+  clip_range: 0.2
+  
+# Hybrid control settings
+hybrid:
+  use_classical_baseline: true
+  classical_error_topic: /lane_detection/center_error
+  classical_valid_topic: /lane_detection/valid
+  rl_action_scale: 0.5  # Scale RL correction to not override classical
+  classical_gain: 0.02  # Gain for classical lane keeping
+  
+# Reward settings
+reward:
+  center_error_weight: -1.0
+  smoothness_weight: -0.1
+  speed_weight: 0.01
+  valid_lane_bonus: 0.5
+  
+# Safety settings
+safety:
+  max_steering_angle: 0.52  # radians (from URDF)
+  max_speed: 5.0  # m/s
+  emergency_stop_on_invalid: true

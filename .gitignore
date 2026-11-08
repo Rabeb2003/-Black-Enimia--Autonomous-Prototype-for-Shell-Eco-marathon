@@ -1,23 +1,16 @@
-# Ignore everything except specific directories
-*
+# ===== ENIMIA BLACK - Git Ignore =====
 
-# But keep these directories
-!src/
-!src/enimia_black_description/
-!src/enimia_black_description/**
-!src/enimia_rl/
-!src/enimia_rl/enimia_rl/
-!src/enimia_rl/enimia_rl/**
-!README.md
-!.gitignore
+# Build / install / log artifacts
+build/
+install/
+log/
 
 # Python cache
 __pycache__/
 *.pyc
 *.pyo
 
-# Large model files
-src/enimia_black_description/models/
+# Large model files (tracked via Git LFS or manually)
 *.pt
 *.torchscript
 *.onnx
@@ -27,13 +20,41 @@ src/enimia_black_description/meshes/
 *.stl
 *.dae
 
-# Images
+# Images / captures
 *.png
 *.jpg
 *.jpeg
 *.gif
 
-# World files
-src/enimia_black_description/world/
-*.sdf
-*.world
+# Videos
+*.mp4
+*.avi
+*.mkv
+
+# World files are large but we want new_circuit.world tracked
+src/enimia_black_description/world/*.sdf
+
+# RL training data (917MB of obs_*.json)
+src/enimia_rl/data/
+
+# RL trained model weights (large zip)
+models/
+*.zip
+
+# Docs / PDF / Maps
+src/enimia_black_description/docs/
+*.pdf
+*.kml
+*.kmz
+
+# ROS bags
+*.bag
+*.db3
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

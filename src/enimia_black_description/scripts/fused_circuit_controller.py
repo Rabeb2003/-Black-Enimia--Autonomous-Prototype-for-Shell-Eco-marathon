@@ -51,6 +51,8 @@ class FusedCircuitController(Node):
         self.declare_parameter('stop_sign_topic', '/stop_sign/detected')
         self.declare_parameter('lidar_bias_topic', '/lidar/barrier_steer_bias')
         self.declare_parameter('lidar_brake_topic', '/lidar/emergency_brake')
+        self.declare_parameter('rl_correction_topic', '/rl/steering_correction')
+        self.declare_parameter('enable_rl_correction', False)
 
         # Vehicle Kinematics
         self.declare_parameter('wheelbase', 1.704)
@@ -97,6 +99,8 @@ class FusedCircuitController(Node):
         self.stop_sign_topic = self.get_parameter('stop_sign_topic').value
         self.lidar_bias_topic = self.get_parameter('lidar_bias_topic').value
         self.lidar_brake_topic = self.get_parameter('lidar_brake_topic').value
+        self.rl_correction_topic = self.get_parameter('rl_correction_topic').value
+        self.enable_rl_correction = bool(self.get_parameter('enable_rl_correction').value)
 
         self.wheelbase = float(self.get_parameter('wheelbase').value)
         self.max_steering_angle = float(self.get_parameter('max_steering_angle').value)
@@ -141,6 +145,9 @@ class FusedCircuitController(Node):
         self.lidar_barrier_bias = 0.0
         self.lidar_emergency_brake = False
 
+        # RL correction
+        self.rl_steering_correction = 0.0
+
         # 5-second Stop Line & Stop Sign Hold State
         self.stop_line_detected = False
         self.stop_sign_detected = False
@@ -172,6 +179,7 @@ class FusedCircuitController(Node):
         self.create_subscription(Bool, self.stop_sign_topic, self.stop_sign_callback, 10)
         self.create_subscription(Float32, self.lidar_bias_topic, self.lidar_bias_callback, 10)
         self.create_subscription(Bool, self.lidar_brake_topic, self.lidar_brake_callback, 10)
+        self.create_subscription(Float32, self.rl_correction_topic, self.rl_correction_callback, 10)
         self.create_subscription(Odometry, self.odom_topic, self.odom_callback, 10)
 
         if self.odom_topic != '/odom':
@@ -213,6 +221,9 @@ class FusedCircuitController(Node):
 
     def lidar_brake_callback(self, msg: Bool):
         self.lidar_emergency_brake = bool(msg.data)
+
+    def rl_correction_callback(self, msg: Float32):
+        self.rl_steering_correction = float(msg.data)
 
     def odom_callback(self, msg: Odometry):
         px = msg.pose.pose.position.x
@@ -330,9 +341,19 @@ class FusedCircuitController(Node):
             theoretical_curve_steer = -math.atan(self.wheelbase * self.curvature)
             clamped_curve_ff = float(np.clip(self.kc * theoretical_curve_steer, -self.max_curve_ff, self.max_curve_ff))
 
-            # Combine control terms + active LiDAR barrier repulsion
+            # Combine control terms + active LiDAR barrier repulsion + RL correction
             target_steer = feedback_steer + heading_term + clamped_curve_ff + self.lidar_barrier_bias
-            target_steer = float(np.clip(target_steer, -self.max_steering_angle, self.max_steering_angle))
+            
+            # Add RL correction if enabled
+            if self.enable_rl_correction:
+                target_steer += self.rl_steering_correction
+                self.get_logger().debug(f'RL correction applied: {self.rl_steering_correction:.4f} rad')
+            
+            # Start grid launch stabilization: smooth heading hold along pit straight
+            if self.cumulative_distance < 15.0:
+                target_steer = float(np.clip(target_steer, -0.18, 0.18))
+            else:
+                target_steer = float(np.clip(target_steer, -self.max_steering_angle, self.max_steering_angle))
 
             # 3. Fast & Smooth Steering Slew-Rate Limiter:
             max_delta = self.max_steer_rate * dt

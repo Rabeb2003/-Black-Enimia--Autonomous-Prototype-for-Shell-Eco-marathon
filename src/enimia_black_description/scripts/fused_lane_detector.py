@@ -155,10 +155,11 @@ class FusedLaneDetector(Node):
         half_w = w // 2
         tracked_center = self.last_valid_center if self.last_valid_center is not None else float(half_w)
 
-        # Expected track half-width function (in pixels)
+        # Calibrated track half-width function for 12m Silesia Ring track (at 1280x720)
         def expected_half_width(y_row):
             ratio = (y_row - y_top) / max(1.0, float(y_bottom - y_top))
-            return 90.0 + 130.0 * ratio
+            # Perspective scaling: 350px far field (~18m) to 1100px near bumper (~3.5m)
+            return 350.0 + 750.0 * ratio
 
         right_border_near = None
         left_border_near = None
@@ -215,13 +216,17 @@ class FusedLaneDetector(Node):
                     if len(cluster) >= 2:
                         cx = float(np.mean(cluster))
                         hw = expected_half_width(y)
-                        if abs(cx - tracked_center) < (hw * 0.38):
-                            center_white = cx
-                        elif cx < (tracked_center - hw * 0.35):
-                            if left_white is None or abs(cx - tracked_center) < abs(left_white - tracked_center):
+                        
+                        # Silesia Ring: dashed centerline is near track center (+- 0.30 * hw or +- 200px)
+                        dist_from_tracked = abs(cx - tracked_center)
+                        if dist_from_tracked < max(180.0, hw * 0.30):
+                            if center_white is None or dist_from_tracked < abs(center_white - tracked_center):
+                                center_white = cx
+                        elif cx < (tracked_center - max(200.0, hw * 0.45)):
+                            if left_white is None or dist_from_tracked < abs(left_white - tracked_center):
                                 left_white = cx
-                        elif cx > (tracked_center + hw * 0.35):
-                            if right_white is None or abs(cx - tracked_center) < abs(right_white - tracked_center):
+                        elif cx > (tracked_center + max(200.0, hw * 0.45)):
+                            if right_white is None or dist_from_tracked < abs(right_white - tracked_center):
                                 right_white = cx
 
             eff_left = left_white if left_white is not None else (left_border if left_border > 12 else None)
@@ -231,11 +236,16 @@ class FusedLaneDetector(Node):
             row_center = None
             hw = expected_half_width(y)
 
-            if eff_left is not None and eff_right is not None:
-                road_mid = (eff_left + eff_right) / 2.0
-                row_center = 0.50 * center_white + 0.50 * road_mid if center_white is not None else road_mid
-            elif center_white is not None:
-                row_center = center_white
+            # Center dashed line has highest authority if present
+            if center_white is not None:
+                if eff_left is not None and eff_right is not None:
+                    # Blend center dashed line with road boundaries
+                    road_mid = (eff_left + eff_right) / 2.0
+                    row_center = 0.70 * center_white + 0.30 * road_mid
+                else:
+                    row_center = center_white
+            elif eff_left is not None and eff_right is not None:
+                row_center = (eff_left + eff_right) / 2.0
             elif eff_left is not None:
                 row_center = eff_left + hw
             elif eff_right is not None:
